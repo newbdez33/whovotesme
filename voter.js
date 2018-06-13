@@ -17,7 +17,7 @@ MongoClient.connect(url, function(err, db) {
   });
 });
 
-var block_num = 15138
+var block_num = 15138   //first vote here
 //var sleep_time = 1
 
 async function fetch() {
@@ -45,7 +45,7 @@ function get_block(bid) {
                 log(("block("+bid+")").green, payload.id)
                 var account = check_transaction(payload)
                 if ( account != null ) {
-                    dbo.collection("accounts").insertOne(account, function(err, res){
+                    dbo.collection("accounts").update({"account":account.account}, account, {upsert: true, safe: false}, function(err, res){
                         resolve(payload)
                     })
                     return
@@ -72,7 +72,7 @@ function check_transaction(block) {
                 if (act.data.producers.indexOf("jedaaaaaaaaa") >= 0) {
                     var accountname = act.data.voter
                     var producers = act.data.producers
-                    var block_num = row.block_num
+                    var block_num = block.block_num
                     var obj = {"account":accountname, "producers":producers, "block_num":block_num, "stacked":0}
                     log( accountname.green, act.data.voter.blue, act.data.producers.join() )
                     return obj

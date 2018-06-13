@@ -17,7 +17,7 @@ MongoClient.connect(url, function(err, db) {
   });
 });
 
-var block_num = 17864
+var block_num = 415635
 var sleep_time = 1
 
 async function fetch() {
@@ -25,33 +25,31 @@ async function fetch() {
     while(true) {
 
         await Promise.all([
-            get_block(block_num)
+            get_block()
         ]).then(function(ticker){
             //publish()
             //storage_jobs();
-            block_num++
         })
-        await sleep(sleep_time)
+//        await sleep(sleep_time)
     }
 
 }
 
-function get_block(bid) {
-    var url = 'http://api.jeda.one:8888/v1/chain/get_block';
+function get_block() {
+    var url = 'http://127.0.0.1:8888/v1/chain/get_block';
     return new Promise(function (resolve, reject) {
 
-        dbo.collection("blocks").findOne({block_num:bid}, function(err, payload) {
+        dbo.collection("blocks").findOne({block_num:block_num}, function(err, payload) {
 
             if ( payload != null ) {
                 check_transaction(payload)
-                //log (("block("+block_num+"):").yellow, payload.id);
+                log (("block("+block_num+"):").yellow, payload.id);
                 resolve(payload)
                 return
             }
-            sleep_time = 100    //calling api then we sleep longer
             request.post(url)
             .set('Content-Type', 'application/json')
-            .send('{"block_num_or_id":'+bid+'}')
+            .send('{"block_num_or_id":'+block_num+'}')
             .then(function (payload) {
                 var json
                 try {
@@ -66,7 +64,8 @@ function get_block(bid) {
                 }
                 dbo.collection("blocks").insertOne(json, function(err, res){
                     check_transaction(json)
-                    //log (("block("+block_num+"):").green, json.id);
+block_num++;
+                    log (("block("+block_num+"):").green, json.id);
                     resolve(payload)
                 })
                 

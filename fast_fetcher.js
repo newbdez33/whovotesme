@@ -18,7 +18,7 @@ MongoClient.connect(url, function(err, db) {
   });
 });
 
-var block_num = 652817
+var block_num = 659378
 var sleep_time = 300
 
 async function fetch() {
@@ -31,7 +31,7 @@ async function fetch() {
             //publish()
             //storage_jobs();
         })
-       await sleep(sleep_time)
+       //await sleep(sleep_time)
     }
 
 }
@@ -55,7 +55,7 @@ function get_block() {
                 try {
                     json = JSON.parse(stdout)
                 } catch(e) {
-                    log("up to date")
+                    //log("up to date")
                     json = undefined
                 }
                 if ( json == undefined ) {

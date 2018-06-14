@@ -4,6 +4,7 @@ var moment = require('moment')
 const log = require ('ololog').configure ({ locate: false })
 const asTable   = require ('as-table')
 var jsonminify = require("jsonminify");
+const exec = require("child_process").exec
 require ('ansicolor').nice;
 var MongoClient = require('mongodb').MongoClient;
 var url = "mongodb://localhost:27017/blocks";
@@ -13,6 +14,7 @@ MongoClient.connect(url, function(err, db) {
   if (err) throw err;
   dbo = db.db("blocks");
   dbo.createCollection("accounts", function(err, res) {
+    log("started")
     fetch(dbo)
   });
 });
@@ -40,22 +42,46 @@ function get_block(bid) {
 
     return new Promise(function (resolve, reject) {
 
-        dbo.collection("blocks").findOne({block_num:bid}, function(err, payload) {
-            if ( payload != null ) {
-                log(("block("+bid+")").green, payload.id)
-                var account = check_transaction(payload)
-                if ( account != null ) {
-                    dbo.collection("accounts").update({"account":account.account}, account, {upsert: true, safe: false}, function(err, res){
-                        resolve(payload)
-                    })
+        exec('/home/jacky/bp/cleos.sh get block ' + block_num , (error, stdout, stderr) => {
+                var json
+                try {
+                    json = JSON.parse(stdout)
+                } catch(e) {
+                    log("up to date")
+                    json = undefined
+                }
+                if ( json == undefined ) {
+                    resolve(stdout)
                     return
                 }
-
-                resolve(payload)
+                log(("voter("+bid+")").green, json.id)
+                var account = check_transaction(json)
+                if ( account != null ) {
+                    exec('/home/jacky/bp/cleos.sh get account -j ' + account.account , (errora, stdouta, stderra) => {
+                        var obj
+                        try {
+                            obj = JSON.parse(stdouta)
+                        } catch(e) {
+                            log("json failed")
+                            obj = undefined
+                        }
+                        if ( obj == undefined ) {
+                            resolve(stdouta)
+                            return
+                        }
+                        //log(("voter("+account.account+")").green, obj.voter_info)
+                        account.staked = obj.voter_info.staked
+                        account.update_to_date = 1
+                        dbo.collection("accounts").update({"account":account.account}, account, {upsert: true, safe: false}, function(err, res){
+                            log(("voter("+account.account+")").green, account.staked)
+                            resolve(obj)
+                            return
+                        })
+                    })
+                }
+                resolve(json)
                 return
-            }
-        });
-
+        })
             
     });
 }
@@ -74,7 +100,7 @@ function check_transaction(block) {
                     var producers = act.data.producers
                     var block_num = block.block_num
                     var obj = {"account":accountname, "producers":producers, "block_num":block_num, "stacked":0}
-                    log( accountname.green, act.data.voter.blue, act.data.producers.join() )
+                    //log( accountname.green, act.data.voter.blue, act.data.producers.join() )
                     return obj
                 }
             }

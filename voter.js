@@ -99,7 +99,7 @@ function check_transaction(block) {
                     var accountname = act.data.voter
                     var producers = act.data.producers
                     var block_num = block.block_num
-                    var obj = {"account":accountname, "producers":producers, "block_num":block_num, "stacked":0}
+                    var obj = {"account":accountname, "producers":producers, "block_num":block_num, "staked":0}
                     //log( accountname.green, act.data.voter.blue, act.data.producers.join() )
                     return obj
                 }
